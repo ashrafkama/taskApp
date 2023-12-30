@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 
 namespace Task_Application.Models
 {
@@ -12,8 +11,7 @@ namespace Task_Application.Models
         }
 
         public int Id { get; set; }
-        [Required]
-        public string? Status1 { get; set; }
+        public string? Title { get; set; }
 
         public virtual ICollection<Task> Tasks { get; set; }
     }

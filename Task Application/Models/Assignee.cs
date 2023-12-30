@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Task_Application.Models
 {
@@ -10,7 +9,7 @@ namespace Task_Application.Models
         {
             Tasks = new HashSet<Task>();
         }
-        [ForeignKey("Task")]
+
         public int Id { get; set; }
         public string? Assignee1 { get; set; }
         public string? Email { get; set; }
