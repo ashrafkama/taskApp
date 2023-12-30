@@ -25,13 +25,6 @@ namespace Task_Application.Controllers
         [HttpGet]
         public async Task<IEnumerable<Models.Task>> Get()
         {
-            var tasks = new List<Models.Task>();
-            foreach (var task in _context.Tasks)
-            {
-                task.AssigneeNoNavigation = await _context.Assignees.FirstOrDefaultAsync(m => m.Id == task.AssigneeNo);
-                task.StatusNoNavigation = await _context.Statuses.FirstOrDefaultAsync(m => m.Id == task.StatusNo);
-                tasks.Add(task);
-            }
             return await _context.Tasks.ToListAsync();
         }
 
