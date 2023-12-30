@@ -12,6 +12,7 @@ namespace Task_Application.Models
         }
 
         public int Id { get; set; }
+        [Required]
         public string? Status1 { get; set; }
 
         public virtual ICollection<Task> Tasks { get; set; }

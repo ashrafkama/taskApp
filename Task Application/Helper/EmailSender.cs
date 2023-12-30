@@ -1,4 +1,6 @@
-﻿using System.Net;
+﻿using Microsoft.Extensions.Options;
+using MimeKit;
+using System.Net;
 using System.Net.Mail;
 using System.Text;
 
@@ -6,28 +8,35 @@ namespace Task_Application.Helper
 {
     public class EmailSender : IEmailSender
     {
+        private readonly MailSettings _mailSettings;
+        public EmailSender(IOptions<MailSettings> mailSettingsOptions)
+        {
+            _mailSettings = mailSettingsOptions.Value;
+        }
+
         public void SendEmail(string toEmail, string subject)
         {
-            // Set up SMTP client
-            SmtpClient client = new SmtpClient("smtp.gmail.com", 587);
-            client.EnableSsl = true;
-            client.UseDefaultCredentials = false;
-            client.Credentials = new NetworkCredential("taskapplication84@gmail.com", "taskApp@001");
+            using (SmtpClient SmtpServer = new SmtpClient(_mailSettings.Server, _mailSettings.Port))
+            {
+                var mail = new MailMessage();
+                if(_mailSettings.SenderEmail != null)
+                     mail.From = new MailAddress(_mailSettings.SenderEmail);
+                mail.To.Add(toEmail);
+                mail.Subject = subject;
+                mail.IsBodyHtml = true;
+                StringBuilder mailBody = new StringBuilder();
+                mailBody.AppendFormat("<h1>There are new tasks assigned to you </h1>");
+                mailBody.AppendFormat("<br />");
+                mailBody.AppendFormat("<p>greeting for you </p>");
+                mail.Body = mailBody.ToString();
+                SmtpServer.Port = 587;
+                SmtpServer.UseDefaultCredentials = false;
+                SmtpServer.Credentials = new System.Net.NetworkCredential(_mailSettings.UserName, _mailSettings.Password);
+                SmtpServer.EnableSsl = true;
+                SmtpServer.Send(mail);
+            }
+          
 
-            // Create email message
-            MailMessage mailMessage = new MailMessage();
-            mailMessage.From = new MailAddress("taskapplication84@gmail.com");
-            mailMessage.To.Add(toEmail);
-            mailMessage.Subject = subject;
-            mailMessage.IsBodyHtml = true;
-            StringBuilder mailBody = new StringBuilder();
-            mailBody.AppendFormat("<h1>There are new tasks assigned to you </h1>");
-            mailBody.AppendFormat("<br />");
-            mailBody.AppendFormat("<p>greeting for you </p>");
-            mailMessage.Body = mailBody.ToString();
-
-            // Send email
-            client.Send(mailMessage);
         }
     }
 }

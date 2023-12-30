@@ -41,22 +41,29 @@ namespace Task_Application.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Post(Models.Task task)
+        public async Task<IActionResult> Post(Models.TaskDao taskDao)
         {
+            var task = new Models.Task();
+            task.Title = taskDao.Title;
+            task.Description = taskDao.Description;
+            task.DueDate = taskDao.DueDate;
+            task.StatusNo = taskDao.StatusNo;
+            task.AssigneeNo = taskDao.AssigneeNo;
             _context.Add(task);
             await _context.SaveChangesAsync();
             var selectAssignee = await _context.Assignees.FirstOrDefaultAsync(m => m.Id == task.AssigneeNo);
-            _emailSender.SendEmail(selectAssignee.Email, "New Task");
+            if (selectAssignee != null && selectAssignee.Email != null)
+                _emailSender.SendEmail(selectAssignee.Email, "New Task");
             return Ok();
         }
 
-        [HttpPut]
-        public async Task<IActionResult> Put(Models.Task task)
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Put(Models.TaskDao task,int id)
         {
-            if (task == null || task.Id == 0)
+            if (task == null || id == 0)
                 return BadRequest();
 
-            var selectTask = await _context.Tasks.FindAsync(task.Id);
+            var selectTask = await _context.Tasks.FindAsync(id);
             if (selectTask == null)
                 return NotFound();
             selectTask.Title = task.Title;
