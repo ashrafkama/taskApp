@@ -4,7 +4,7 @@ namespace Task_Application.Helper
 {
     public class ExcelHelper
     {
-        public static byte[] CreateFile<T>(List<T> source)
+        public static byte[] CreateFile<T>(IEnumerable<T> source)
         {
             var workbook = new XSSFWorkbook();
             var sheet = workbook.CreateSheet("Sheet1");

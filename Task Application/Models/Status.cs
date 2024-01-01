@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using Task_Application.Repository;
 
 namespace Task_Application.Models
 {
-    public partial class Status
+    public partial class Status : IEntity
     {
         public Status()
         {

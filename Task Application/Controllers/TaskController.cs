@@ -1,122 +1,76 @@
-﻿
-
-using FluentValidation;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.ServiceBus.Messaging;
+using Task_Application.Exception_Handler;
 using Task_Application.Helper;
 using Task_Application.Models;
+using Task_Application.Repository;
+using Task_Application.UnitofWork;
 
 namespace Task_Application.Controllers
 {
-    [Route("api/[controller]")]
     [ApiController]
-    public class TaskController : ControllerBase
+    [Route("[controller]")]
+    [Authorize]
+    [TaskExceptionHandler]
+    public class TaskController : Controller
     {
-        private readonly taskappdbContext _context;
-        private readonly IEmailSender _emailSender;
+        private readonly IUnitOfwork _unitOfWork;
+        IRepository<Models.Task> TaskRepository;
 
-
-
-        public TaskController(taskappdbContext context, IEmailSender emailSender)
+        public TaskController(IUnitOfwork unitOfwork)
         {
-            _context = context;
-            _emailSender = emailSender;
+            _unitOfWork = unitOfwork;
+            TaskRepository = new TaskRepository(_unitOfWork, "crud");
         }
-
         [HttpGet]
-        public async Task<IEnumerable<Models.Task>> Get()
+        public async Task<ActionResult<IEnumerable<Models.Task>>> GetTasks()
         {
-            return await _context.Tasks.ToListAsync();
-        }
 
-        [HttpGet("{id}")]
-        public async Task<IActionResult> Get(int id)
-        {
-            if (id < 1)
-                return BadRequest();
-            var selectTask = await _context.Tasks.FirstOrDefaultAsync(m => m.Id == id);
-            if (selectTask == null)
-                return NotFound();
-            return Ok(selectTask);
+            var taskRsult = await TaskRepository.Get();
+            return taskRsult;
 
         }
 
         [HttpPost]
-        public async Task<IActionResult> Post(Models.TaskDao taskDao)
+        public async Task<ActionResult<Models.Task>> CreateTask(TaskDao taskDao)
         {
-            ApiResponse<string> response = new ApiResponse<string>();
-            try
-            {
-            var task = new Models.Task();
+            Models.Task task = new Models.Task();
             task.Title = taskDao.Title;
             task.Description = taskDao.Description;
             task.DueDate = taskDao.DueDate;
             task.StatusNo = taskDao.StatusNo;
             task.AssigneeNo = taskDao.AssigneeNo;
-            _context.Add(task);
-            await _context.SaveChangesAsync();
-            var selectAssignee = await _context.Assignees.FirstOrDefaultAsync(m => m.Id == task.AssigneeNo);
-            if (selectAssignee != null && selectAssignee.Email != null)
-                _emailSender.SendEmail(selectAssignee.Email, "New Task" + task.Title);
-                response.Data = "User created successfully! Alert Email sended";
-            
-            }
-            catch (Exception ex) 
-            {
-
-                response.Success = false;
-                response.ErrorMessage = ex.Message;
-            }
-            return Ok(response);
-        }
-
-        [HttpPut("{id}")]
-        public async Task<IActionResult> Put(Models.TaskDao task,int id)
-        {
-            if (!ModelState.IsValid)
-            {
-                return StatusCode(StatusCodes.Status400BadRequest, ModelState);
-            }
-            if (task == null || id == 0)
-                return BadRequest();
-
-            var selectTask = await _context.Tasks.FindAsync(id);
-            if (selectTask == null)
-                return NotFound();
-            selectTask.Title = task.Title;
-            selectTask.Description = task.Description;
-            selectTask.AssigneeNo = task.AssigneeNo;
-            selectTask.DueDate =   task.DueDate;
-            selectTask.StatusNo = task.StatusNo;
-            await _context.SaveChangesAsync();
-            return Ok();
+            var categories = await TaskRepository.Create(task);
+                return categories;
+                      
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id)
+        public async Task<IActionResult> DeleteTask(int id)
         {
-            if (id < 1)
-                return BadRequest();
-            var selectTask = await _context.Tasks.FindAsync(id);
-            if (selectTask == null)
-                return NotFound();
-            _context.Tasks.Remove(selectTask);
-            await _context.SaveChangesAsync();
-            return Ok();
+            var categories = await TaskRepository.Delete(id);
+            return categories;
+        }
 
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateTask(int id, TaskDao taskDao)
+        {
+            Models.Task task = new Models.Task();
+            task.Title = taskDao.Title;
+            task.Description = taskDao.Description;
+            task.DueDate = taskDao.DueDate;
+            task.StatusNo = taskDao.StatusNo;
+            task.AssigneeNo = taskDao.AssigneeNo;
+            var categories = await TaskRepository.Update(id, task); ;
+            return categories;
         }
 
         [HttpGet("download")]
-        public async Task<FileResult> Download(CancellationToken ct)
+        public  FileResult Download(CancellationToken ct)
         {
-            var tasks = await _context.Tasks.ToListAsync(ct);
+            var tasks =  TaskRepository.GetFile(ct);
             var file = ExcelHelper.CreateFile(tasks);
-            return File(file, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "tasks.xlsx");
+           return File(file, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "tasks.xlsx");
         }
-        
-
     }
-
-
 }

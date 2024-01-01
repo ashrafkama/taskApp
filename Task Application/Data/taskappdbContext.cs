@@ -2,33 +2,27 @@
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Task_Application.Models;
 
-namespace Task_Application.Models
+namespace Task_Application.Data
 {
     public partial class taskappdbContext : DbContext
     {
-        public taskappdbContext()
+        protected readonly IConfiguration Configuration;
+        public taskappdbContext(IConfiguration configuration)
         {
+            Configuration = configuration;
         }
-
-        public taskappdbContext(DbContextOptions<taskappdbContext> options)
-            : base(options)
-        {
-        }
-
         public virtual DbSet<Assignee> Assignees { get; set; } = null!;
         public virtual DbSet<Status> Statuses { get; set; } = null!;
-        public virtual DbSet<Task> Tasks { get; set; } = null!;
+        public virtual DbSet<Models.Task> Tasks { get; set; } = null!;
+        public virtual DbSet<User> Users { get; set; } = null!;
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             if (!optionsBuilder.IsConfigured)
             {
-                #pragma warning disable CS1030 // #warning directive
-                #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
-                                optionsBuilder.UseSqlServer("Server=localhost;Database=taskappdb;Trusted_Connection=True;TrustServerCertificate=True;");
-                                optionsBuilder.UseLazyLoadingProxies();
-                #pragma warning restore CS1030 // #warning directive
+                optionsBuilder.UseSqlServer(Configuration.GetConnectionString("SqlServer"));
             }
         }
 
@@ -57,7 +51,7 @@ namespace Task_Application.Models
                     .IsUnicode(false);
             });
 
-            modelBuilder.Entity<Task>(entity =>
+            modelBuilder.Entity<Models.Task>(entity =>
             {
                 entity.ToTable("Task");
 
