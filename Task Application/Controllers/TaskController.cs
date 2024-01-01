@@ -1,7 +1,9 @@
 ﻿
 
+using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.ServiceBus.Messaging;
 using Task_Application.Helper;
 using Task_Application.Models;
 
@@ -43,6 +45,9 @@ namespace Task_Application.Controllers
         [HttpPost]
         public async Task<IActionResult> Post(Models.TaskDao taskDao)
         {
+            ApiResponse<string> response = new ApiResponse<string>();
+            try
+            {
             var task = new Models.Task();
             task.Title = taskDao.Title;
             task.Description = taskDao.Description;
@@ -53,13 +58,26 @@ namespace Task_Application.Controllers
             await _context.SaveChangesAsync();
             var selectAssignee = await _context.Assignees.FirstOrDefaultAsync(m => m.Id == task.AssigneeNo);
             if (selectAssignee != null && selectAssignee.Email != null)
-                _emailSender.SendEmail(selectAssignee.Email, "New Task");
-            return Ok();
+                _emailSender.SendEmail(selectAssignee.Email, "New Task" + task.Title);
+                response.Data = "User created successfully! Alert Email sended";
+            
+            }
+            catch (Exception ex) 
+            {
+
+                response.Success = false;
+                response.ErrorMessage = ex.Message;
+            }
+            return Ok(response);
         }
 
         [HttpPut("{id}")]
         public async Task<IActionResult> Put(Models.TaskDao task,int id)
         {
+            if (!ModelState.IsValid)
+            {
+                return StatusCode(StatusCodes.Status400BadRequest, ModelState);
+            }
             if (task == null || id == 0)
                 return BadRequest();
 
